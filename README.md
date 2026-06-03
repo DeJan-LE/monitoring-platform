@@ -35,7 +35,7 @@ git clone https://github.com/DeJan-LE/monitoring-platform.git
 cd monitoring-platform
 
 # 2. .env anpassen
-cp template.env .env
+cp template_.env .env
 nano .env
 
 # 3. Alle Container starten
