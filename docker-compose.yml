@@ -1,6 +1,6 @@
 # ================================================================
-# Monitoring & Incident Platform – Modul 169
-# Matteo & Jan · 2025
+# Monitoring und Incident Platform – Modul 169
+# Matteo und Jan · 2026
 # ================================================================
 # Start:  docker compose up -d --build
 # Stop:   docker compose down
