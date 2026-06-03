@@ -1,0 +1,162 @@
+# ================================================================
+# Monitoring & Incident Platform – Modul 169
+# Matteo & Jan · 2025
+# ================================================================
+# Start:  docker compose up -d --build
+# Stop:   docker compose down
+# Logs:   docker compose logs -f
+# Status: docker compose ps
+# ================================================================
+
+services:
+
+  # ---------------------------------------------------------------
+  # Uptime Kuma – Monitoring Dashboard
+  # Erreichbar unter: http://localhost/kuma
+  # ---------------------------------------------------------------
+  uptime-kuma:
+    image: louislam/uptime-kuma:1
+    container_name: uptime-kuma
+    restart: unless-stopped
+    volumes:
+      - kuma-data:/app/data
+    ports:
+      - "3001:3001"
+    networks:
+      - monitoring-net
+
+  # ---------------------------------------------------------------
+  # PostgreSQL – Datenbank
+  # Speichert Tickets, User und Notizen persistent via Volume
+  # ---------------------------------------------------------------
+  postgres:
+    image: postgres:16-alpine
+    container_name: postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-monitoring}
+      POSTGRES_USER: ${POSTGRES_USER:-monitor}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-changeme123}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    networks:
+      - monitoring-net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-monitor} -d ${POSTGRES_DB:-monitoring}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ---------------------------------------------------------------
+  # Incident App – eigenes Ticketsystem (Python Flask)
+  # Erreichbar unter: http://localhost/
+  # Wartet auf postgres healthcheck bevor es startet
+  # ---------------------------------------------------------------
+  incident-app:
+    build:
+      context: ./incident-app
+      dockerfile: Dockerfile
+    container_name: incident-app
+    restart: unless-stopped
+    environment:
+      DB_HOST: postgres
+      DB_NAME: ${POSTGRES_DB:-monitoring}
+      DB_USER: ${POSTGRES_USER:-monitor}
+      DB_PASSWORD: ${POSTGRES_PASSWORD:-changeme123}
+      SECRET_KEY: ${SECRET_KEY:-supergeheim123}
+      IT_CODE: ${IT_CODE:-it_for_users26}
+      MAIL_USER: ${MAIL_USER:-}
+      MAIL_PASS: ${MAIL_PASS:-}
+      MAIL_FROM: ${MAIL_FROM:-}
+      APP_URL: ${APP_URL:-http://localhost}
+    networks:
+      - monitoring-net
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  # ---------------------------------------------------------------
+  # Heartbeat Service – eigener Container (Alpine + curl)
+  # Sendet alle 60s ein Signal an Uptime Kuma (Push-Monitor)
+  # Push-URL in .env unter KUMA_HEARTBEAT_URL eintragen
+  # ---------------------------------------------------------------
+  heartbeat-service:
+    build:
+      context: ./heartbeat-service
+      dockerfile: Dockerfile
+    container_name: heartbeat-service
+    restart: unless-stopped
+    environment:
+      KUMA_URL: ${KUMA_HEARTBEAT_URL:-http://uptime-kuma:3001/api/push/DEIN_KEY}
+      INTERVAL_SECONDS: ${HEARTBEAT_INTERVAL:-60}
+    networks:
+      - monitoring-net
+    depends_on:
+      - uptime-kuma
+
+  # ---------------------------------------------------------------
+  # Nginx – Reverse Proxy
+  # Einziger Container mit offenem Port (80)
+  # Verteilt Anfragen:
+  #   /       -> incident-app:5000
+  #   /kuma   -> uptime-kuma:3001
+  # ---------------------------------------------------------------
+  nginx:
+    build:
+      context: ./nginx
+      dockerfile: Dockerfile
+    container_name: nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    networks:
+      - monitoring-net
+    depends_on:
+      - uptime-kuma
+      - incident-app
+
+  # ---------------------------------------------------------------
+  # Cloudflared – öffentlicher Tunnel (kein Account nötig)
+  # URL erscheint in: docker compose logs cloudflared
+  # ---------------------------------------------------------------
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    container_name: cloudflared
+    restart: unless-stopped
+    command: tunnel --no-autoupdate --url http://nginx:80
+    networks:
+      - monitoring-net
+    depends_on:
+      - nginx
+
+  cloudflared-kuma:
+    image: cloudflare/cloudflared:latest
+    container_name: cloudflared-kuma
+    restart: unless-stopped
+    command: tunnel --no-autoupdate --url http://uptime-kuma:3001
+    networks:
+      - monitoring-net
+    depends_on:
+      - uptime-kuma
+# ================================================================
+# Volumes – persistente Datenspeicherung
+# Bleiben erhalten auch nach docker compose down
+# Löschen nur mit: docker compose down -v
+# ================================================================
+volumes:
+  kuma-data:
+    name: kuma-data
+  postgres-data:
+    name: postgres-data
+
+# ================================================================
+# Netzwerk – internes Bridge-Netzwerk
+# Container kommunizieren intern per Service-Name (kein Port nötig)
+# Von aussen nur Port 80 (nginx) erreichbar
+# ================================================================
+networks:
+  monitoring-net:
+    name: monitoring-net
+    driver: bridge

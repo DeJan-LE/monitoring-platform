@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+{% block title %}Profil{% endblock %}
+{% block content %}
+<div class="topbar">
+  <div class="flex gap-8">
+    <span class="topbar-title">Profil</span>
+  </div>
+</div>
+<div class="content" style="max-width:560px">
+
+  {% if error %}
+  <div style="background:var(--red-bg);color:var(--red);padding:10px 14px;border-radius:var(--r);font-size:13px;margin-bottom:16px;border:1px solid #fecdc9">{{ error }}</div>
+  {% endif %}
+  {% if success %}
+  <div style="background:var(--green-bg);color:var(--green);padding:10px 14px;border-radius:var(--r);font-size:13px;margin-bottom:16px;border:1px solid #a6f4c5">{{ success }}</div>
+  {% endif %}
+
+  <!-- PROFIL BEARBEITEN -->
+  <div class="card mb-16">
+    <div class="card-head"><span class="card-head-title">Profil bearbeiten</span></div>
+    <div class="card-body">
+      <form method="POST">
+        <input type="hidden" name="action" value="profil">
+        <div class="form-group" style="margin-bottom:14px">
+          <label class="form-label">Kürzel</label>
+          <input class="form-control" value="{{ user.kuerzel }}" disabled style="background:var(--gray-bg);color:var(--muted)">
+        </div>
+        <div class="form-group" style="margin-bottom:14px">
+          <label class="form-label">Anzeigename</label>
+          <input class="form-control" name="anzeigename" value="{{ user.anzeigename or '' }}" placeholder="z.B. Matteo Peter">
+        </div>
+        <div class="form-group" style="margin-bottom:16px">
+          <label class="form-label req">E-Mail</label>
+          <input class="form-control" type="email" name="email" value="{{ user.email or '' }}" required>
+        </div>
+        <div class="form-group" style="margin-bottom:0">
+          <label class="form-label">Rolle</label>
+          <div>{% if user.ist_it %}<span class="badge badge-orange">IT-Mitarbeiter</span>{% else %}<span class="badge badge-gray">Benutzer</span>{% endif %}</div>
+        </div>
+        <div class="divider"></div>
+        <div style="text-align:right">
+          <button type="submit" class="btn btn-primary btn-sm">Speichern</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- PASSWORT ÄNDERN -->
+  <div class="card">
+    <div class="card-head"><span class="card-head-title">Passwort ändern</span></div>
+    <div class="card-body">
+      <form method="POST">
+        <input type="hidden" name="action" value="passwort">
+        <div class="form-group" style="margin-bottom:14px">
+          <label class="form-label req">Aktuelles Passwort</label>
+          <input class="form-control" type="password" name="altes_pw" required>
+        </div>
+        <div class="form-group" style="margin-bottom:14px">
+          <label class="form-label req">Neues Passwort</label>
+          <input class="form-control" type="password" name="neues_pw" required>
+        </div>
+        <div class="form-group" style="margin-bottom:0">
+          <label class="form-label req">Neues Passwort bestätigen</label>
+          <input class="form-control" type="password" name="neues_pw2" required>
+        </div>
+        <div class="divider"></div>
+        <div style="text-align:right">
+          <button type="submit" class="btn btn-primary btn-sm">Passwort ändern</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+</div>
+{% endblock %}

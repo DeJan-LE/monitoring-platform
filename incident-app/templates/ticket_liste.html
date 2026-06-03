@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+{% block title %}{{ titel }}{% endblock %}
+{% block content %}
+<div class="topbar">
+  <div class="flex gap-8">
+    <a href="/dashboard" style="color:var(--muted);text-decoration:none;font-size:13px">← Dashboard</a>
+    <span style="color:var(--border)">|</span>
+    <span class="topbar-title">{{ titel }}</span>
+    <span class="topbar-sub">{{ tickets|length }} Tickets</span>
+  </div>
+</div>
+<div class="content">
+  <div class="card">
+    <div class="table-wrap">
+      <table class="tbl">
+        <thead>
+          <tr>
+            {% set cols = [
+              ('nummer',        'Nummer'),
+              ('anrufer',       'Betroffene Person'),
+              ('kurzbeschreibung','Kurzbeschreibung'),
+              ('status',        'Status'),
+              ('zugewiesen_an', 'Zugewiesen an'),
+              ('aktualisiert_am','Aktualisiert'),
+              ('erstellt_am',   'Erstellt'),
+            ] %}
+            {% for col, label in cols %}
+            {% set new_dir = 'asc' if (sort_col == col and sort_dir == 'asc') else 'desc' if (sort_col == col and sort_dir == 'desc') else 'asc' %}
+            {% set arrow = ' ↑' if (sort_col == col and sort_dir == 'asc') else ' ↓' if (sort_col == col and sort_dir == 'desc') else '' %}
+            <th>
+              <div style="display:flex;flex-direction:column;gap:4px">
+                <a href="?status={{ status_filter }}&sort={{ col }}&dir={{ 'asc' if sort_col==col and sort_dir=='desc' else 'desc' if sort_col==col else 'asc' }}&f_nummer={{ f_nummer }}&f_person={{ f_person }}&f_beschr={{ f_beschr }}&f_status={{ f_status }}&f_zugewiesen={{ f_zugewiesen }}"
+                   style="color:inherit;text-decoration:none;white-space:nowrap">
+                  {{ label }}{{ arrow }}
+                </a>
+                {% if col == 'nummer' %}
+                <input type="text" placeholder="Suchen..." value="{{ f_nummer }}"
+                  onchange="filterCol('f_nummer', this.value)"
+                  style="padding:3px 6px;border:1px solid var(--border);border-radius:4px;font-size:11px;font-family:inherit;width:90px">
+                {% elif col == 'anrufer' %}
+                <input type="text" placeholder="Suchen..." value="{{ f_person }}"
+                  onchange="filterCol('f_person', this.value)"
+                  style="padding:3px 6px;border:1px solid var(--border);border-radius:4px;font-size:11px;font-family:inherit;width:110px">
+                {% elif col == 'kurzbeschreibung' %}
+                <input type="text" placeholder="Suchen..." value="{{ f_beschr }}"
+                  onchange="filterCol('f_beschr', this.value)"
+                  style="padding:3px 6px;border:1px solid var(--border);border-radius:4px;font-size:11px;font-family:inherit;width:160px">
+                {% elif col == 'status' %}
+                <select onchange="filterCol('f_status', this.value)"
+                  style="padding:3px 6px;border:1px solid var(--border);border-radius:4px;font-size:11px;font-family:inherit">
+                  <option value="">Alle</option>
+                  {% for s in ['Offen','In Bearbeitung','Gelöst','Abgeschlossen'] %}
+                  <option value="{{ s }}" {% if f_status==s %}selected{% endif %}>{{ s }}</option>
+                  {% endfor %}
+                </select>
+                {% elif col == 'zugewiesen_an' %}
+                <input type="text" placeholder="Suchen..." value="{{ f_zugewiesen }}"
+                  onchange="filterCol('f_zugewiesen', this.value)"
+                  style="padding:3px 6px;border:1px solid var(--border);border-radius:4px;font-size:11px;font-family:inherit;width:100px">
+                {% endif %}
+              </div>
+            </th>
+            {% endfor %}
+          </tr>
+        </thead>
+        <tbody>
+          {% for t in tickets %}
+          <tr onclick="window.location='/tickets/{{ t.id }}'">
+            <td><span class="mono">{{ t.nummer }}</span></td>
+            <td>{{ t.anrufer or '–' }}</td>
+            <td style="max-width:260px"><div style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:500">{{ t.kurzbeschreibung }}</div></td>
+            <td>
+              {% if t.status=='Gelöst' %}<span class="badge badge-green">{{ t.status }}</span>
+              {% elif t.status=='In Bearbeitung' %}<span class="badge badge-orange">{{ t.status }}</span>
+              {% elif t.status=='Abgeschlossen' %}<span class="badge badge-gray">{{ t.status }}</span>
+              {% else %}<span class="badge badge-blue">{{ t.status }}</span>{% endif %}
+            </td>
+            <td>{% if t.zugewiesen_an %}<span class="badge badge-blue">{{ t.zugewiesen_an }}</span>{% else %}<span class="text-muted">–</span>{% endif %}</td>
+            <td class="text-muted text-sm">{{ t.aktualisiert_am.strftime('%d.%m.%y %H:%M') if t.aktualisiert_am else '–' }}</td>
+            <td class="text-muted text-sm">{{ t.erstellt_am.strftime('%d.%m.%y %H:%M') if t.erstellt_am else '–' }}</td>
+          </tr>
+          {% else %}
+          <tr><td colspan="7" style="text-align:center;padding:32px;color:var(--muted)">Keine Tickets gefunden.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+function filterCol(param, value) {
+  const url = new URL(window.location.href);
+  url.searchParams.set(param, value);
+  window.location.href = url.toString();
+}
+</script>
+{% endblock %}

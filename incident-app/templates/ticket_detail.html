@@ -1,0 +1,284 @@
+{% extends "base.html" %}
+{% block title %}{{ t.nummer }}{% endblock %}
+{% block content %}
+<div class="topbar">
+  <div class="flex gap-8">
+    <a href="{{ '/dashboard' if session.ist_it else '/tickets/meine' }}" style="color:var(--muted);text-decoration:none;font-size:13px">← Zurück</a>
+    <span style="color:var(--border)">|</span>
+    <span class="mono" style="font-size:13px;color:var(--muted)">{{ t.nummer }}</span>
+    <span class="topbar-title">{{ t.kurzbeschreibung }}</span>
+  </div>
+  {% if session.ist_it %}
+  <button form="form-update" type="submit" name="action" value="update" class="btn btn-primary btn-sm">Speichern</button>
+  {% endif %}
+</div>
+<div class="content" style="max-width:1000px">
+
+  <!-- WORKFLOW -->
+  {% set wf_steps = ['Erfassung','In Bearbeitung','Lösung','Abgeschlossen'] %}
+  {% set wf_map = {'Offen':0,'In Bearbeitung':1,'Gelöst':2,'Abgeschlossen':3} %}
+  {% set current_step = wf_map.get(t.status, 0) %}
+  <div class="workflow">
+    {% for step in wf_steps %}
+    <div class="wf-step {% if loop.index0==current_step %}active{% elif loop.index0<current_step %}done{% endif %}">
+      {% if loop.index0 < current_step %}✓ {% endif %}{{ step }}
+    </div>
+    {% endfor %}
+  </div>
+
+  <!-- WIEDER ÖFFNEN BANNER -->
+  {% if kann_reopenen %}
+  <div style="background:#fffaeb;border:1px solid #fec84b;border-radius:8px;padding:12px 16px;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between">
+    <div>
+      <span style="font-size:13px;font-weight:600;color:#b54708">Ticket gelöst</span>
+      <span style="font-size:13px;color:#b54708"> – Falls das Problem noch besteht, kannst du es innerhalb von 7 Tagen wieder öffnen.</span>
+    </div>
+    <form method="POST" style="margin:0">
+      <input type="hidden" name="action" value="reopen">
+      <button type="submit" class="btn btn-sm" style="background:#b54708;color:#fff;border-color:#b54708">Wieder öffnen</button>
+    </form>
+  </div>
+  {% endif %}
+
+  <div style="display:grid;grid-template-columns:1fr 320px;gap:16px;align-items:start">
+
+    <!-- LINKS -->
+    <div>
+      <form method="POST" id="form-update">
+        <input type="hidden" name="action" value="update">
+        <div class="card mb-16">
+          <div class="card-head"><span class="card-head-title">Ticket-Details</span></div>
+          <div class="card-body">
+
+            <div class="form-row cols-2">
+              <div class="form-group">
+                <label class="form-label">Ticket-Nummer</label>
+                <input class="form-control mono" value="{{ t.nummer }}" disabled style="background:var(--gray-bg);color:var(--muted)">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Erstellt am</label>
+                <input class="form-control" value="{{ t.erstellt_am.strftime('%d.%m.%Y %H:%M') if t.erstellt_am else '–' }}" disabled style="background:var(--gray-bg);color:var(--muted)">
+              </div>
+            </div>
+
+            <div class="form-row cols-2">
+              <div class="form-group">
+                <label class="form-label">Anrufer / Ersteller</label>
+                <input class="form-control" value="{{ t.anrufer or '–' }}" disabled style="background:var(--gray-bg);color:var(--muted)">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Telefon</label>
+                <input class="form-control" value="{{ t.telefon or '–' }}" disabled style="background:var(--gray-bg);color:var(--muted)">
+              </div>
+            </div>
+
+            <div class="form-row cols-2">
+              <div class="form-group">
+                <label class="form-label">Kategorie</label>
+                {% if session.ist_it %}
+                <select class="form-control" name="kategorie" id="kategorie">
+                  {% for k in kategorien %}<option value="{{ k }}" {% if k==t.kategorie %}selected{% endif %}>{{ k }}</option>{% endfor %}
+                </select>
+                {% else %}
+                <input class="form-control" value="{{ t.kategorie or '–' }}" disabled style="background:var(--gray-bg);color:var(--muted)">
+                {% endif %}
+              </div>
+              <div class="form-group">
+                <label class="form-label">Unterkategorie</label>
+                {% if session.ist_it %}
+                <select class="form-control" name="unterkategorie" id="unterkategorie">
+                  <option value="{{ t.unterkategorie }}">{{ t.unterkategorie or 'Bitte wählen' }}</option>
+                </select>
+                {% else %}
+                <input class="form-control" value="{{ t.unterkategorie or '–' }}" disabled style="background:var(--gray-bg);color:var(--muted)">
+                {% endif %}
+              </div>
+            </div>
+
+            <div class="form-group" style="margin-bottom:14px">
+              <label class="form-label">Kurzbeschreibung</label>
+              {% if session.ist_it %}
+              <input class="form-control" name="kurzbeschreibung" value="{{ t.kurzbeschreibung }}">
+              {% else %}
+              <input class="form-control" value="{{ t.kurzbeschreibung }}" disabled style="background:var(--gray-bg);color:var(--muted)">
+              {% endif %}
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Beschreibung</label>
+              {% if session.ist_it %}
+              <textarea class="form-control" name="beschreibung" rows="4">{{ t.beschreibung or '' }}</textarea>
+              {% else %}
+              <textarea class="form-control" rows="4" disabled style="background:var(--gray-bg);color:var(--muted)">{{ t.beschreibung or '' }}</textarea>
+              {% endif %}
+            </div>
+
+            {% if session.ist_it %}
+            <div class="form-group">
+              <label class="form-label">Lösungsnotiz <span style="font-size:11px;font-weight:400;color:var(--muted)">(wird per Mail an User gesendet)</span></label>
+              <textarea class="form-control" name="loesung" rows="3" placeholder="Wie wurde das Problem gelöst?">{{ t.loesung or '' }}</textarea>
+            </div>
+            {% elif t.loesung %}
+            <div class="form-group">
+              <label class="form-label">Lösung</label>
+              <textarea class="form-control" rows="3" disabled style="background:var(--gray-bg);color:var(--muted)">{{ t.loesung }}</textarea>
+            </div>
+            {% endif %}
+
+          </div>
+        </div>
+      </form>
+
+      <!-- NOTIZEN -->
+      <div class="card">
+        <div class="card-head">
+          <span class="card-head-title">Notizen &amp; Aktivitäten</span>
+          <span class="badge badge-gray">{{ notizen|length }}</span>
+        </div>
+        <div class="card-body">
+          <div class="tabs">
+            <button class="tab active" data-tab="notizen">Notizen</button>
+            <button class="tab" data-tab="loesung">Lösungsdetails</button>
+          </div>
+
+          <div id="tab-notizen">
+            {% for n in notizen %}
+            <div class="notiz {% if n.intern %}notiz-intern{% endif %}">
+              <div class="notiz-avatar">{{ n.autor[:2] if n.autor else 'SY' }}</div>
+              <div class="notiz-body">
+                <div class="notiz-header">
+                  <span class="notiz-autor">{{ n.autor or 'System' }}{% if n.intern %} <span style="font-size:10px;color:var(--orange);font-weight:400">(intern)</span>{% endif %}</span>
+                  <span class="notiz-time">{{ n.erstellt_am.strftime('%d.%m.%Y %H:%M') if n.erstellt_am else '' }}</span>
+                </div>
+                <div class="notiz-text">{{ n.text }}</div>
+              </div>
+            </div>
+            {% else %}
+            <div class="text-muted text-sm" style="padding:12px 0">Noch keine Notizen.</div>
+            {% endfor %}
+          </div>
+
+          <div id="tab-loesung" style="display:none">
+            {% if t.loesung %}
+            <div style="padding:12px;background:var(--gray-bg);border-radius:var(--r);font-size:13px">{{ t.loesung }}</div>
+            {% else %}
+            <div class="text-muted text-sm" style="padding:12px 0">Noch keine Lösungsdetails erfasst.</div>
+            {% endif %}
+            {% if t.geloest_am %}
+            <div class="text-muted text-sm" style="margin-top:8px">Gelöst am: {{ t.geloest_am.strftime('%d.%m.%Y %H:%M') }}</div>
+            {% endif %}
+          </div>
+
+          <div class="divider"></div>
+
+          <form method="POST">
+            <input type="hidden" name="action" value="notiz">
+            <div class="form-group" style="margin-bottom:10px">
+              <textarea class="form-control" name="text" rows="3" placeholder="Notiz hinzufügen..." required></textarea>
+            </div>
+            {% if session.ist_it %}
+            <div class="flex-between">
+              <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted);cursor:pointer">
+                <input type="checkbox" name="intern" style="accent-color:var(--orange)">
+                Interne Notiz (nur IT sichtbar, keine Mail)
+              </label>
+              <button type="submit" class="btn btn-outline btn-sm">Hinzufügen</button>
+            </div>
+            {% else %}
+            <div style="text-align:right">
+              <button type="submit" class="btn btn-outline btn-sm">Hinzufügen</button>
+            </div>
+            {% endif %}
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- RECHTS -->
+    <div>
+      <div class="card">
+        <div class="card-head"><span class="card-head-title">Einstellungen</span></div>
+        <div class="card-body">
+
+          <div class="form-group" style="margin-bottom:14px">
+            <label class="form-label">Status</label>
+            {% if session.ist_it %}
+            <select class="form-control" name="status" form="form-update">
+              {% for s in ['Offen','In Bearbeitung','Gelöst','Abgeschlossen'] %}
+              <option {% if s==t.status %}selected{% endif %}>{{ s }}</option>
+              {% endfor %}
+            </select>
+            {% else %}
+            {% if t.status=='Gelöst' %}<span class="badge badge-green">{{ t.status }}</span>
+            {% elif t.status=='In Bearbeitung' %}<span class="badge badge-orange">{{ t.status }}</span>
+            {% elif t.status=='Abgeschlossen' %}<span class="badge badge-gray">{{ t.status }}</span>
+            {% else %}<span class="badge badge-blue">{{ t.status }}</span>{% endif %}
+            {% endif %}
+          </div>
+
+          {% if session.ist_it %}
+          <div class="form-group" style="margin-bottom:14px">
+            <label class="form-label">Zugewiesen an</label>
+            <select class="form-control" name="zugewiesen_an" form="form-update">
+              <option value="">– Nicht zugewiesen –</option>
+              {% for u in it_users %}
+              <option value="{{ u.kuerzel }}" {% if u.kuerzel==t.zugewiesen_an %}selected{% endif %}>
+                {{ u.anzeigename }} ({{ u.kuerzel }})
+              </option>
+              {% endfor %}
+            </select>
+          </div>
+          {% else %}
+          <div class="form-group" style="margin-bottom:14px">
+            <label class="form-label">Zugewiesen an</label>
+            <div class="text-sm">{% if t.zugewiesen_an %}<span class="badge badge-blue">{{ t.zugewiesen_an }}</span>{% else %}<span class="text-muted">Noch nicht zugewiesen</span>{% endif %}</div>
+          </div>
+          {% endif %}
+
+          <div class="divider"></div>
+
+          <div class="form-group" style="margin-bottom:10px">
+            <label class="form-label">Priorität</label>
+            {% if session.ist_it %}
+            <select class="form-control" name="prioritaet" form="form-update">
+              {% for p in ['1 - Kritisch','2 - Hoch','3 - Mittel','4 - Niedrig'] %}
+              <option {% if p==t.prioritaet %}selected{% endif %}>{{ p }}</option>
+              {% endfor %}
+            </select>
+            {% else %}
+            {% set p=t.prioritaet or '4 - Niedrig' %}
+            {% if '1' in p %}<span class="badge badge-red">{{ p }}</span>
+            {% elif '2' in p %}<span class="badge badge-orange">{{ p }}</span>
+            {% else %}<span class="badge badge-gray">{{ p }}</span>{% endif %}
+            {% endif %}
+          </div>
+
+          <div class="form-group" style="margin-bottom:10px">
+            <label class="form-label">Auswirkung</label>
+            {% if session.ist_it %}
+            <select class="form-control" name="auswirkung" form="form-update">
+              {% for a in ['1 - Hoch','2 - Mittel','3 - Niedrig'] %}
+              <option {% if a==t.auswirkung %}selected{% endif %}>{{ a }}</option>
+              {% endfor %}
+            </select>
+            {% else %}<span class="text-muted text-sm">{{ t.auswirkung or '–' }}</span>{% endif %}
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Dringlichkeit</label>
+            {% if session.ist_it %}
+            <select class="form-control" name="dringlichkeit" form="form-update">
+              {% for d in ['1 - Hoch','2 - Mittel','3 - Niedrig'] %}
+              <option {% if d==t.dringlichkeit %}selected{% endif %}>{{ d }}</option>
+              {% endfor %}
+            </select>
+            {% else %}<span class="text-muted text-sm">{{ t.dringlichkeit or '–' }}</span>{% endif %}
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+{% endblock %}

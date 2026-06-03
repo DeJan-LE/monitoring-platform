@@ -1,0 +1,133 @@
+{% extends "base.html" %}
+{% block title %}Dashboard{% endblock %}
+{% block content %}
+<div class="topbar">
+  <div class="flex gap-8"><span class="topbar-title">IT Dashboard</span></div>
+</div>
+<div class="content">
+
+  <!-- STATS -->
+  <div class="grid-4 mb-20">
+    <a href="/tickets/liste?status=Offen" style="text-decoration:none">
+      <div class="stat">
+        <div class="stat-label"><span class="stat-dot" style="background:#b54708"></span>Neue Tickets</div>
+        <div class="stat-value stat-orange">{{ neu_unzugew }}</div>
+      </div>
+    </a>
+    <a href="/tickets/liste?status=In+Bearbeitung" style="text-decoration:none">
+      <div class="stat">
+        <div class="stat-label"><span class="stat-dot" style="background:#1d4ed8"></span>In Bearbeitung</div>
+        <div class="stat-value stat-blue">{{ in_bearbeitung }}</div>
+      </div>
+    </a>
+    <a href="/tickets/liste" style="text-decoration:none">
+      <div class="stat">
+        <div class="stat-label"><span class="stat-dot" style="background:#b42318"></span>Offen (total)</div>
+        <div class="stat-value stat-red">{{ offen }}</div>
+      </div>
+    </a>
+    <a href="/tickets/liste?status=Gel%C3%B6st" style="text-decoration:none">
+      <div class="stat">
+        <div class="stat-label"><span class="stat-dot" style="background:#027a48"></span>Gelöst</div>
+        <div class="stat-value stat-green">{{ geloest }}</div>
+      </div>
+    </a>
+  </div>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
+
+    <!-- PERSÖNLICHER POOL -->
+    <div class="card">
+      <div class="card-head">
+        <span class="card-head-title">Mein Pool</span>
+        <span class="badge badge-orange">{{ meine|length }}</span>
+      </div>
+      {% if meine %}
+      <div class="table-wrap">
+        <table class="tbl">
+          <thead><tr><th>Nummer</th><th>Beschreibung</th><th>Status</th></tr></thead>
+          <tbody>
+            {% for t in meine %}
+            <tr onclick="window.location='/tickets/{{ t.id }}'">
+              <td><span class="mono">{{ t.nummer }}</span></td>
+              <td style="max-width:180px"><div style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ t.kurzbeschreibung }}</div></td>
+              <td>{% if t.status=='In Bearbeitung' %}<span class="badge badge-orange">{{ t.status }}</span>
+                  {% else %}<span class="badge badge-blue">{{ t.status }}</span>{% endif %}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <div class="card-body text-muted text-sm">Keine Tickets zugewiesen.</div>
+      {% endif %}
+    </div>
+
+    <!-- NEUE TICKETS -->
+    <div class="card">
+      <div class="card-head">
+        <span class="card-head-title">Neue Tickets</span>
+        <span class="badge badge-blue">{{ neue|length }}</span>
+      </div>
+      {% if neue %}
+      <div class="table-wrap">
+        <table class="tbl">
+          <thead><tr><th>Nummer</th><th>Beschreibung</th><th>Priorität</th></tr></thead>
+          <tbody>
+            {% for t in neue %}
+            <tr onclick="window.location='/tickets/{{ t.id }}'">
+              <td><span class="mono">{{ t.nummer }}</span></td>
+              <td style="max-width:160px"><div style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ t.kurzbeschreibung }}</div></td>
+              <td>{% set p=t.prioritaet or '4 - Niedrig' %}
+                  {% if '1' in p %}<span class="badge badge-red">{{ p }}</span>
+                  {% elif '2' in p %}<span class="badge badge-orange">{{ p }}</span>
+                  {% else %}<span class="badge badge-gray">{{ p }}</span>{% endif %}
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <div class="card-body text-muted text-sm">Keine neuen Tickets.</div>
+      {% endif %}
+    </div>
+
+  </div>
+
+  <!-- ALLGEMEINER POOL -->
+  <div class="card">
+    <div class="card-head">
+      <span class="card-head-title">Allgemeiner Pool – alle offenen Tickets</span>
+      <span class="badge badge-gray">{{ alle_offen|length }}</span>
+    </div>
+    {% if alle_offen %}
+    <div class="table-wrap">
+      <table class="tbl">
+        <thead><tr><th>Nummer</th><th>Kurzbeschreibung</th><th>Kategorie</th><th>Priorität</th><th>Zugewiesen an</th><th>Erstellt</th></tr></thead>
+        <tbody>
+          {% for t in alle_offen %}
+          <tr onclick="window.location='/tickets/{{ t.id }}'">
+            <td><span class="mono">{{ t.nummer }}</span></td>
+            <td style="max-width:220px"><div style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:500">{{ t.kurzbeschreibung }}</div></td>
+            <td class="text-muted">{{ t.kategorie or '–' }}</td>
+            <td>{% set p=t.prioritaet or '4 - Niedrig' %}
+                {% if '1' in p %}<span class="badge badge-red">{{ p }}</span>
+                {% elif '2' in p %}<span class="badge badge-orange">{{ p }}</span>
+                {% elif '3' in p %}<span class="badge badge-blue">{{ p }}</span>
+                {% else %}<span class="badge badge-gray">{{ p }}</span>{% endif %}
+            </td>
+            <td>{% if t.zugewiesen_an %}<span class="badge badge-blue">{{ t.zugewiesen_an }}</span>{% else %}<span class="text-muted text-sm">–</span>{% endif %}</td>
+            <td class="text-muted text-sm">{{ t.erstellt_am.strftime('%d.%m.%y %H:%M') if t.erstellt_am else '–' }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="card-body text-muted text-sm">Keine offenen Tickets.</div>
+    {% endif %}
+  </div>
+
+</div>
+{% endblock %}

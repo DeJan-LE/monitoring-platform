@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% block title %}Meine Tickets{% endblock %}
+{% block content %}
+<div class="topbar">
+  <div class="flex gap-8">
+    <span class="topbar-title">Meine Tickets</span>
+    <span class="topbar-sub">{{ tickets|length }} Tickets</span>
+  </div>
+  <a href="/tickets/neu" class="btn btn-primary btn-sm">+ Neues Ticket</a>
+</div>
+<div class="content">
+  {% if tickets %}
+  <div class="card">
+    <div class="table-wrap">
+      <table class="tbl">
+        <thead>
+          <tr>
+            <th>Nummer</th><th>Kurzbeschreibung</th><th>Kategorie</th>
+            <th>Priorität</th><th>Status</th><th>Erstellt am</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for t in tickets %}
+          <tr onclick="window.location='/tickets/{{ t.id }}'">
+            <td><span class="mono">{{ t.nummer }}</span></td>
+            <td style="max-width:260px">
+              <div style="font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ t.kurzbeschreibung }}</div>
+            </td>
+            <td><span class="text-muted">{{ t.kategorie or '–' }}</span>{% if t.unterkategorie %} / {{ t.unterkategorie }}{% endif %}</td>
+            <td>
+              {% set p = t.prioritaet or '4 - Niedrig' %}
+              {% if '1' in p %}<span class="badge badge-red">{{ p }}</span>
+              {% elif '2' in p %}<span class="badge badge-orange">{{ p }}</span>
+              {% elif '3' in p %}<span class="badge badge-blue">{{ p }}</span>
+              {% else %}<span class="badge badge-gray">{{ p }}</span>{% endif %}
+            </td>
+            <td>
+              {% if t.status == 'Gelöst' %}<span class="badge badge-green">{{ t.status }}</span>
+              {% elif t.status == 'In Bearbeitung' %}<span class="badge badge-orange">{{ t.status }}</span>
+              {% else %}<span class="badge badge-blue">{{ t.status }}</span>{% endif %}
+            </td>
+            <td class="text-muted text-sm">{{ t.erstellt_am.strftime('%d.%m.%Y %H:%M') if t.erstellt_am else '–' }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  {% else %}
+  <div class="card" style="text-align:center;padding:48px">
+    <div style="font-size:32px;margin-bottom:12px">📋</div>
+    <div style="font-size:15px;font-weight:600;margin-bottom:6px">Noch keine Tickets</div>
+    <div class="text-muted text-sm" style="margin-bottom:18px">Du hast noch kein Ticket erstellt.</div>
+    <a href="/tickets/neu" class="btn btn-primary">Erstes Ticket erstellen</a>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

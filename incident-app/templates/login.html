@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Anmelden – Incident System</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{--blue:#1d4ed8;--blue-hover:#1e40af;--border:#d0d5dd;--text:#101828;--muted:#667085;--red:#b42318;--red-bg:#fef3f2;--r:8px}
+body{font-family:'IBM Plex Sans',sans-serif;background:#f0f2f5;min-height:100vh;display:flex;align-items:center;justify-content:center}
+.wrap{width:100%;max-width:420px;padding:24px}
+.logo{text-align:center;margin-bottom:28px}
+.logo-title{font-size:22px;font-weight:600;color:#1a2332}
+.logo-sub{font-size:13px;color:var(--muted);margin-top:4px}
+.card{background:#fff;border:1px solid #e4e7ec;border-radius:12px;box-shadow:0 4px 16px rgba(0,0,0,.07);overflow:hidden}
+.tabs{display:flex;border-bottom:1px solid #e4e7ec}
+.tab{flex:1;padding:13px;font-size:13px;font-weight:500;color:var(--muted);text-align:center;cursor:pointer;background:none;border:none;font-family:inherit;border-bottom:2px solid transparent;margin-bottom:-1px;transition:all .12s}
+.tab.active{color:var(--blue);border-bottom-color:var(--blue);background:#fff}
+.form-body{padding:22px}
+.form-group{margin-bottom:14px}
+.label{display:block;font-size:12px;font-weight:500;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;margin-bottom:5px}
+.label.req::after{content:" *";color:var(--red)}
+.input{width:100%;padding:9px 12px;border:1px solid var(--border);border-radius:var(--r);font-size:14px;font-family:inherit;color:var(--text);transition:border .12s}
+.input:focus{outline:none;border-color:var(--blue);box-shadow:0 0 0 3px rgba(29,78,216,.1)}
+.input-upper{text-transform:uppercase}
+.input-upper::placeholder{text-transform:none}
+.it-box{background:#f9fafb;border:1px solid #e4e7ec;border-radius:var(--r);padding:12px;margin-bottom:14px}
+.it-box-label{font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;margin-bottom:8px}
+.it-box-sub{font-size:11px;color:var(--muted);margin-top:6px}
+.btn{width:100%;padding:10px;background:var(--blue);color:#fff;border:none;border-radius:var(--r);font-size:14px;font-weight:500;cursor:pointer;font-family:inherit;margin-top:8px;transition:background .12s}
+.btn:hover{background:var(--blue-hover)}
+.error{background:var(--red-bg);color:var(--red);padding:10px 12px;border-radius:var(--r);font-size:13px;margin-bottom:14px;border:1px solid #fecdc9}
+.panel{display:none}
+.panel.active{display:block}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="logo">
+    <div class="logo-title">Incident System</div>
+    <div class="logo-sub">Modul 169 · Matteo &amp; Jan</div>
+  </div>
+  <div class="card">
+    <div class="tabs">
+      <button class="tab active" onclick="showTab('login',this)">Anmelden</button>
+      <button class="tab" onclick="showTab('register',this)">Registrieren</button>
+    </div>
+
+    {% if error %}<div style="padding:14px 22px 0"><div class="error">{{ error }}</div></div>{% endif %}
+
+    <!-- LOGIN -->
+    <div class="panel active" id="panel-login">
+      <form class="form-body" method="POST">
+        <input type="hidden" name="action" value="login">
+        <div class="form-group">
+          <label class="label req">Kürzel</label>
+          <input class="input input-upper" name="kuerzel" placeholder="z.B. MP" required>
+        </div>
+        <div class="form-group">
+          <label class="label req">Passwort</label>
+          <input class="input" type="password" name="passwort" required>
+        </div>
+        <button class="btn" type="submit">Anmelden</button>
+      </form>
+    </div>
+
+    <!-- REGISTER -->
+    <div class="panel" id="panel-register">
+      <form class="form-body" method="POST">
+        <input type="hidden" name="action" value="register">
+        <div class="form-group">
+          <label class="label req">Kürzel</label>
+          <input class="input input-upper" name="kuerzel" placeholder="z.B. MP" required>
+        </div>
+        <div class="form-group">
+          <label class="label">Anzeigename</label>
+          <input class="input" name="anzeigename" placeholder="z.B. Matteo Peter">
+        </div>
+        <div class="form-group">
+          <label class="label req">E-Mail</label>
+          <input class="input" type="email" name="email" placeholder="deine@email.ch" required>
+        </div>
+        <div class="form-group">
+          <label class="label req">Passwort</label>
+          <input class="input" type="password" name="passwort" required>
+        </div>
+        <div class="it-box">
+          <div class="it-box-label">IT-Zugangscode (optional)</div>
+          <input class="input" name="it_code" placeholder="Nur für IT-Mitarbeiter" autocomplete="off">
+          <div class="it-box-sub">Falls du einen IT-Code hast, hier eingeben um IT-Zugriff zu erhalten.</div>
+        </div>
+        <button class="btn" type="submit">Konto erstellen</button>
+      </form>
+    </div>
+  </div>
+</div>
+<script>
+function showTab(name,el){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('panel-'+name).classList.add('active');
+}
+</script>
+</body>
+</html>

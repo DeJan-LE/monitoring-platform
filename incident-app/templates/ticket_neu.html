@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+{% block title %}Ticket erstellen{% endblock %}
+{% block content %}
+<div class="topbar">
+  <div class="flex gap-8">
+    <a href="/start" style="color:var(--muted);text-decoration:none;font-size:13px">← Zurück</a>
+    <span style="color:var(--border)">|</span>
+    <span class="topbar-title">Neues Ticket erstellen</span>
+  </div>
+</div>
+<div class="content" style="max-width:860px">
+
+  <form method="POST">
+    <div class="card mb-20">
+      <div class="card-head">
+        <span class="card-head-title">Angaben zur Anfrage</span>
+        <span class="text-sm text-muted">* Pflichtfelder</span>
+      </div>
+      <div class="card-body">
+
+        <div class="form-row cols-2">
+          <div class="form-group">
+            <label class="form-label">Angefordert für</label>
+            <input class="form-control" name="anrufer" value="{{ session.kuerzel }}" placeholder="Kürzel / Name">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Telefon</label>
+            <input class="form-control" name="telefon" placeholder="z.B. +41 44 000 00 00">
+          </div>
+        </div>
+
+        <div class="form-row cols-2">
+          <div class="form-group">
+            <label class="form-label req">Kategorie</label>
+            <select class="form-control" name="kategorie" id="kategorie" required>
+              <option value="">Bitte wählen</option>
+              {% for k in kategorien %}<option value="{{ k }}">{{ k }}</option>{% endfor %}
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Unterkategorie</label>
+            <select class="form-control" name="unterkategorie" id="unterkategorie">
+              <option value="">Erst Kategorie wählen</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-row cols-3">
+          <div class="form-group">
+            <label class="form-label">Auswirkung</label>
+            <select class="form-control" name="auswirkung">
+              <option>1 - Hoch</option><option>2 - Mittel</option><option selected>3 - Niedrig</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Dringlichkeit</label>
+            <select class="form-control" name="dringlichkeit">
+              <option>1 - Hoch</option><option>2 - Mittel</option><option selected>3 - Niedrig</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Priorität</label>
+            <select class="form-control" name="prioritaet">
+              <option>1 - Kritisch</option><option>2 - Hoch</option><option>3 - Mittel</option><option selected>4 - Niedrig</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group" style="margin-bottom:14px">
+          <label class="form-label req">Kurzbeschreibung</label>
+          <input class="form-control" name="kurzbeschreibung" placeholder="Was ist das Problem?" required>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Beschreibung</label>
+          <textarea class="form-control" name="beschreibung" rows="5" placeholder="Möglichst detaillierte Beschreibung der Anfrage. Eine gute Beschreibung hilft uns, das Problem schneller zu lösen."></textarea>
+        </div>
+
+      </div>
+    </div>
+
+    <div class="flex-between">
+      <a href="/start" class="btn btn-outline">Abbrechen</a>
+      <button type="submit" class="btn btn-primary">
+        <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+        Ticket absenden
+      </button>
+    </div>
+
+  </form>
+</div>
+{% endblock %}
